@@ -2,3 +2,9 @@
 10.45.86.82
 10.45.86.83
 
+[guac-host]
+10.45.86.81
+
+[guac_host:vers]
+ansible_user:ubuntu
+ansible_python_interpreter=/usr/bil/python3

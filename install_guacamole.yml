@@ -1,0 +1,85 @@
+---
+- name: Export old Guacamole database
+  hosts: old_guac
+  become: true
+
+  pre_tasks:
+    - name: Load configuration (with defaults from example file).
+      ansible.builtin.include_vars: "{{ item }}"
+      loop:
+        - example.config.yml
+        - guacamole_config.yml
+
+  tasks:
+    - name: Setup export tasks.
+      ansible.builtin.import_tasks: tasks/export_guac.yml
+      when: mysql_db_name|lower != 'initdb.sql'
+
+- name: Install Guacamole
+  hosts: guac_host
+  become: true
+
+  pre_tasks:
+    - name: Load configuration (with defaults from example file).
+      ansible.builtin.include_vars: "{{ item }}"
+      loop:
+        - example.config.yml
+        - config.yml
+
+    - name: Ensure apt cache is up to date.
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_facts.os_family == "Debian"
+
+    - name: Ensure pacman cache is up to date
+      community.general.pacman:
+        update_cache: true
+      when: ansible_facts.os_family == "Archlinux"
+
+    - name: Ensure dnf cache is up to date
+      ansible.builtin.dnf:
+        update_cache: true
+      when: ansible_os_family == "RedHat"
+  
+  tasks:
+    - name: Setup Docker.
+      ansible.builtin.import_tasks: tasks/docker.yml
+
+    - name: Setup MariaDB.
+      ansible.builtin.import_tasks: tasks/mariadb.yml
+      vars:
+        user_mysql: "{{ 'mysql' if ansible_facts.os_family == 'Archlinux' else 'root' }}"
+
+    - name: "Setup Guacamole: Database."
+      ansible.builtin.import_tasks: tasks/guacamole_database.yml
+
+    - name: "Setup Guacamole: Docker."
+      become: false
+      ansible.builtin.import_tasks: tasks/guacamole_docker.yml
+
+    - name: Configure firewall
+      ansible.builtin.import_tasks: tasks/firewall.yml
+      when: ansible_facts.os_family == "RedHat"
+
+- name: Cleanup localhost.
+  hosts: localhost
+  gather_facts: false
+
+  pre_tasks:
+    - name: Load configuration (with defaults from example file).
+      ansible.builtin.include_vars: "{{ item }}"
+      loop:
+        - example.config.yml
+        - config.yml
+
+  tasks:
+    - name: Check if database dump exists.
+      ansible.builtin.stat:
+        path: "{{ mysql_db_name }}"
+      register: dump
+
+    - name: Remove database dump from localhost.
+      ansible.builtin.file:
+        path: "{{ mysql_db_name }}"
+        state: absent
+      when: dump.stat.exists
