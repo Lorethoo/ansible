@@ -1,0 +1,23 @@
+---
+- name: Configure Logging and SNMP
+  hosts: switches
+  gather_facts: no
+  tasks:
+
+    - name: Configure Logging
+      ios_config:
+        lines:
+          - logging host 192.168.99.100
+          - logging trap debugging
+
+    - name: Configure SNMP
+      ios_config:
+        lines:
+          - snmp-server community public RO
+          - snmp-server community private RW
+          - snmp-server contact "IT Department"
+          - snmp-server location "Data Center - Rack A"
+
+    - name: Save Configuration
+      ios_command:
+        commands: write memory

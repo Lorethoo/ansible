@@ -1,0 +1,22 @@
+---
+- name: Configure QoS for VoIP
+  hosts: switches
+  gather_facts: no
+  tasks:
+
+    - name: Enable QoS globally
+      ios_config:
+        lines:
+          - mls qos
+
+    - name: Configure QoS on VoIP Ports
+      ios_config:
+        parents: interface GigabitEthernet1/0/7
+        lines:
+          - description VoIP Phone
+          - switchport voice vlan 50
+          - mls qos trust dscp
+
+    - name: Save Configuration
+      ios_command:
+        commands: write memory

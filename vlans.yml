@@ -1,0 +1,63 @@
+---
+- name: Configure VLANs and Assign to Interfaces
+  hosts: switches
+  gather_facts: no
+  tasks:
+
+    - name: Create VLANs
+      ios_config:
+        lines:
+          - vlan 10
+          - name SALES
+          - vlan 20
+          - name HR
+          - vlan 30
+          - name IT
+          - vlan 40
+          - name GUEST
+          - vlan 99
+          - name MANAGEMENT
+
+    - name: Assign VLANs to Interfaces
+      ios_config:
+        parents: interface GigabitEthernet1/0/1
+        lines:
+          - description Sales Department
+          - switchport mode access
+          - switchport access vlan 10
+          - switchport nonegotiate
+          - spanning-tree portfast
+
+    - name: Assign VLAN 20 to HR
+      ios_config:
+        parents: interface GigabitEthernet1/0/2
+        lines:
+          - description HR Department
+          - switchport mode access
+          - switchport access vlan 20
+          - switchport nonegotiate
+          - spanning-tree portfast
+
+    - name: Assign VLAN 30 to IT
+      ios_config:
+        parents: interface GigabitEthernet1/0/3
+        lines:
+          - description IT Department
+          - switchport mode access
+          - switchport access vlan 30
+          - switchport nonegotiate
+          - spanning-tree portfast
+
+    - name: Assign VLAN 40 to Guest WiFi
+      ios_config:
+        parents: interface GigabitEthernet1/0/4
+        lines:
+          - description Guest WiFi
+          - switchport mode access
+          - switchport access vlan 40
+          - switchport nonegotiate
+          - spanning-tree portfast
+
+    - name: Save Configuration
+      ios_command:
+        commands: write memory

@@ -1,0 +1,5 @@
+---
+- import_playbook: vlans.yml
+- import_playbook: security.yml
+- import_playbook: qos.yml
+- import_playbook: monitoring.yml

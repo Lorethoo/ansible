@@ -1,0 +1,27 @@
+---
+- name: Configure Security and STP
+  hosts: switches
+  gather_facts: no
+  tasks:
+
+    - name: Enable Spanning Tree Protocol (STP)
+      ios_config:
+        lines:
+          - spanning-tree mode rapid-pvst
+          - spanning-tree vlan 10,20,30,40 priority 4096
+          - spanning-tree portfast default
+          - spanning-tree bpduguard enable
+
+    - name: Enable Port Security on VLAN Ports
+      ios_config:
+        parents: interface range GigabitEthernet1/0/1-4
+        lines:
+          - switchport port-security
+          - switchport port-security maximum 2
+          - switchport port-security violation restrict
+          - switchport port-security aging time 5
+          - switchport port-security aging type inactivity
+
+    - name: Save Configuration
+      ios_command:
+        commands: write memory
