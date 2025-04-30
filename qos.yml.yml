@@ -1,22 +1,31 @@
 ---
-- name: Configure QoS for VoIP
+- name: Configure QoS for VoIP on router
   hosts: switches
   gather_facts: no
   tasks:
 
-    - name: Enable QoS globally
+    - name: Define VOICE class-map
       ios_config:
         lines:
-          - mls qos
+          - match ip dscp ef
+        parents: class-map match-any VOICE
 
-    - name: Configure QoS on VoIP Ports
+    - name: Define QoS policy-map
       ios_config:
-        parents: interface GigabitEthernet1/0/7
         lines:
-          - description VoIP Phone
-          - switchport voice vlan 50
-          - mls qos trust dscp
+          - class VOICE
+          - priority percent 70
+          - class class-default
+          - fair-queue
+        parents: policy-map QOS-POLICY
 
-    - name: Save Configuration
+    - name: Apply QoS policy to interface
+      ios_config:
+        lines:
+          - service-policy output QOS-POLICY
+        parents: interface GigabitEthernet0/0
+
+    - name: Save configuration
       ios_command:
         commands: write memory
+
